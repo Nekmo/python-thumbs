@@ -1,0 +1,3 @@
+
+class ThumbNotAvailable(Exception):
+    pass
