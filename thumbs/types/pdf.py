@@ -5,6 +5,7 @@ class PdfThumbType(CmdThumbTypeBase):
     file_output = False
     buffer_input = True
     buffer_output = True
+    image_formats = ['png']
     cmds = ['/usr/bin/pdftoppm']
     args = [
         # '-f', 'N',

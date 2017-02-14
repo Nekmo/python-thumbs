@@ -1,9 +1,11 @@
 from thumbs.types.docs import DocsThumbType
+from thumbs.types.image import ImageThumbtype
 from thumbs.types.video import VideoThumbType
 
 mimetypes = {
     'application/vnd.oasis.opendocument.text': DocsThumbType,
 
+    'image': ImageThumbtype,
     'video': VideoThumbType,
 }
 

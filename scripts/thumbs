@@ -1,6 +1,19 @@
 #!/usr/bin/env python
+import argparse
 import sys
 
 from thumbs import thumb
 
-thumb(sys.argv[1], sys.argv[2])
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('input')
+    parser.add_argument('output')
+    parser.add_argument('--width')
+    parser.add_argument('--height')
+    parser.add_argument('--resize-action', default='exact', choices=['max', 'exact'])
+    args = parser.parse_args()
+    dimensions = None
+    if args.width or args.height:
+        dimensions = {'width': args.width, 'height': args.height, 'resize': args.resize_action}
+    thumb(args.input, args.output, dimensions)

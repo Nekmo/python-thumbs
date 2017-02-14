@@ -17,5 +17,5 @@ class DocsThumbType(CmdThumbTypeBase):
     ]
 
     def create(self, input_file, output_file=None, dimensions=None, tformat='jpeg', **kwargs):
-        buffer = super(DocsThumbType, self).create(input_file, None, dimensions, tformat, **kwargs)
-        PdfThumbType().create(buffer, output_file, dimensions, tformat, **kwargs)
+        buffer = super(DocsThumbType, self).create(input_file, None, None, None, **kwargs)
+        return PdfThumbType().create(buffer, output_file, dimensions, tformat, **kwargs)
