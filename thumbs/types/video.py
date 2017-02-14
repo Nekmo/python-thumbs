@@ -14,13 +14,14 @@ class VideoThumbType(CmdThumbTypeBase):
     file_output = True
     cmds = ['/usr/bin/ffmpeg']
     args = [
-        '-v', 'quiet',
+        # '-v', 'quiet',
         '-ss', '{{ss}}',
         '-i', '{input_file}',
         '-frames:v', '5',
         '-r', '1/10',
         '-y',  # Overwrite
         '-vsync', 'vfr',
+        # '-f', '{tformat}',
         '{output_file}',
     ]
 
@@ -34,6 +35,7 @@ class VideoThumbType(CmdThumbTypeBase):
         return int(duration) / 1000
 
     def parse_args(self, cmd, input_file, output_file, dimensions, tformat, **kwargs):
+        tformat = {'jpeg': 'jpg'}.get(tformat, tformat)
         args = super(VideoThumbType, self).parse_args(cmd, input_file, output_file, dimensions, tformat, **kwargs)
         duration = self.get_duration(input_file)
         ss = (duration / 100) * DEFAULT_SS_PCNT if duration else DEFAULT_SS

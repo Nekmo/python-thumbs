@@ -22,18 +22,30 @@ def buffer_to_file(buffer, file=None):
     return file
 
 
-def get_temp_file():
-    return tempfile.NamedTemporaryFile(prefix=TEMP_FILE_PREFIX)
+def get_temp_file(ext=''):
+    suffix = '.{}'.format(ext) if ext else None
+    return tempfile.NamedTemporaryFile(prefix=TEMP_FILE_PREFIX, suffix=suffix)
 
 
 class ThumbTypeBase(object):
+    image_formats = ()
+    dimensions = False
 
     def is_availabile(self):
         raise NotImplementedError
 
-    def create(self, input_file, output_file=None, dimensions=None, format='jpeg', page=1):
+    def create_base(self, input_file, output_file=None, dimensions=None, tformat='jpeg', **kwargs):
         raise NotImplementedError
 
+    def create(self, input_file, output_file=None, dimensions=None, tformat='jpeg', **kwargs):
+        from thumbs.types.image import ImageThumbtype
+        image_encode = tformat and tformat not in self.image_formats
+        image_encode = image_encode or (dimensions and not self.dimensions)
+        o_file = None if image_encode else output_file
+        response = self.create_base(input_file, o_file, dimensions, tformat, **kwargs)
+        if image_encode:
+            response = ImageThumbtype().create_base(response, output_file, dimensions, tformat, **kwargs)
+        return response
 
 class CmdThumbTypeBase(ThumbTypeBase):
     cmds = ()
@@ -42,8 +54,6 @@ class CmdThumbTypeBase(ThumbTypeBase):
     file_output = False
     buffer_input = False
     file_input = True
-    image_formats = ()
-    dimensions = False
 
     def __init__(self):
         assert self.buffer_output or self.file_output, "Output is required."
@@ -63,7 +73,7 @@ class CmdThumbTypeBase(ThumbTypeBase):
         params = {x: y for x, y in dict(locals(), **kwargs).items() if x not in ['self', 'kwargs']}
         return [x.format(**params) for x in self.get_args(**params)]
 
-    def _create(self, input_file, output_file=None, dimensions=None, tformat='jpeg', **kwargs):
+    def create_base(self, input_file, output_file=None, dimensions=None, tformat='jpeg', **kwargs):
         cmd = self.get_cmd()
         if cmd is None:
             raise ThumbNotAvailable
@@ -78,10 +88,14 @@ class CmdThumbTypeBase(ThumbTypeBase):
             # Es un buffer de entrada, pero no está soportado. Usar si es posible el archivo
             # y si no enviar a un archivo temporal
             i_file = getattr(input_file, 'file', None) or buffer_to_file(input_file)
+        if not is_buffer(input_file) and not self.file_input:
+            # La entrada es un archivo, pero no está permitido. Debe ser en su lugar un
+            # buffer
+            stdin = open(input_file, 'rb')
         if not output_file and not self.buffer_output:
             # Buffer de salida no disponible. Debo escribir a un archivo temporal para
             # después devolver el mismo
-            buffer = get_temp_file()
+            buffer = get_temp_file(tformat)
             o_file = buffer.name
         p = subprocess.Popen([cmd] + self.parse_args(cmd, i_file, o_file, dimensions, tformat, **kwargs),
                              stdout=subprocess.PIPE, stdin=stdin)
@@ -96,16 +110,12 @@ class CmdThumbTypeBase(ThumbTypeBase):
             # Devuelvo el file object del output_file si es lo que se requería
             p.communicate()
             return open(output_file, 'rb')
+        elif buffer:
+            p.communicate()
+            return open(buffer.name, 'rb')
         else:
-            # Si se requería en su lugar el buffer, lo devuelvo
-            return buffer or p.stdout
-
-    def create(self, input_file, output_file=None, dimensions=None, tformat='jpeg', **kwargs):
-        from thumbs.types.image import ImageThumbtype
-        image_encode = tformat and tformat not in self.image_formats
-        image_encode = image_encode or (dimensions and not self.dimensions)
-        o_file = None if image_encode else output_file
-        response = self._create(input_file, o_file, dimensions, tformat, **kwargs)
-        if image_encode:
-            response = ImageThumbtype().create(response, output_file, dimensions, tformat, **kwargs)
-        return response
+            return p.stdout
+        # TODO:
+        # else:
+        #     # Si se requería en su lugar el buffer, lo devuelvo
+        #     return buffer or p.stdout

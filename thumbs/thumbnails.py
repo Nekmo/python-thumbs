@@ -1,7 +1,11 @@
 import mimetypes
 from thumbs.exceptions import ThumbNotAvailable
 
+mimetypes.add_type('application/x-yaml', '.yml')
+mimetypes.add_type('application/x-php', '.php')
+mimetypes.add_type('text/plain', '.init')
 mimetypes.init()
+
 
 FORMATS = {
     'jpg': 'jpeg',
