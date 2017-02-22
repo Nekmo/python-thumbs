@@ -23,7 +23,10 @@ class SourceCodeThumbType(ThumbTypeBase):
         from pygments.lexers.python import PythonLexer
         from pygments.formatters.img import ImageFormatter
         lines = kwargs.get('lines', 25)
-        o = open(input_file).readlines()
+        try:
+            o = open(input_file).readlines()
+        except (UnicodeDecodeError, IOError):
+            raise ThumbNotAvailable
         lines = ''.join(o[:lines])
         output = highlight(lines, PythonLexer(), ImageFormatter(font_name='NimbusMonoPS-Regular.otf',
                                                                 line_numbers=False, image_format='png'))
